@@ -12,22 +12,20 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // --- КОНФИГУРАЦИЯ ---
-const ADMIN_PASSWORD = 'admin'; // Пароль для входа в /admin
-const ADMIN_TOKEN = crypto.randomBytes(16).toString('hex'); // Токен сессии
+const ADMIN_PASSWORD = 'admin';
+const ADMIN_TOKEN = crypto.randomBytes(16).toString('hex');
 
-const PORT = 3000;
-// ⚠️ Ваш локальный IP. Убедитесь, что он не изменился.
+const PORT = 3333;
+
 const MY_IP = '192.168.0.161'; 
 
-// --- MIDDLEWARE ---
-// Увеличиваем лимит до 10MB для больших файлов
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.text({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser()); // Работа с куки для авторизации
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware: Проверка прав админа
 const requireAdmin = (req, res, next) => {
     if (req.cookies['admin_session'] === ADMIN_TOKEN) {
         next();
@@ -36,12 +34,9 @@ const requireAdmin = (req, res, next) => {
     }
 };
 
-// Middleware: Проверка бана по IP
+
 const checkBan = async (req, res, next) => {
-    // Получаем реальный IP
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    
-    // Спрашиваем базу, забанен ли этот IP
     const isBanned = await db.isBanned(ip);
     
     if (isBanned) {
@@ -50,11 +45,9 @@ const checkBan = async (req, res, next) => {
     next();
 };
 
-// Применяем проверку бана ко всем маршрутам создания контента
 app.use('/api/paste', checkBan);
 app.use('/api/ios-share', checkBan);
 
-// --- ХЕЛПЕРЫ ---
 function generateId() {
     return crypto.randomBytes(3).toString('hex').slice(0, 5);
 }
@@ -71,16 +64,12 @@ function calculateExpiration(ttl) {
     }
 }
 
-// --- ОСНОВНОЕ API ---
-
-// 1. Создание пасты
 app.post('/api/paste', async (req, res) => {
     const content = req.body.content;
     const language = req.body.language || 'text';
     const burn = req.body.burn || false;
     const ttl = req.body.ttl || 'never'; 
     
-    // Получаем IP создателя
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     if (!content || typeof content !== 'string') {
@@ -92,12 +81,10 @@ app.post('/api/paste', async (req, res) => {
     const expiresAt = calculateExpiration(ttl);
 
     try {
-        // Передаем IP в базу данных
         await db.createPaste(id, content, language, burnCount, expiresAt, ip);
         
         const fullUrl = `http://${MY_IP}:${PORT}/${id}`;
 
-        // Поддержка curl/wget (возвращаем только ссылку)
         const userAgent = req.get('User-Agent') || '';
         if (userAgent.includes('curl') || userAgent.includes('Wget')) {
             return res.send(fullUrl + '\n');
@@ -110,14 +97,12 @@ app.post('/api/paste', async (req, res) => {
     }
 });
 
-// 2. Чтение пасты
 app.get('/api/paste/:id', async (req, res) => {
     try {
         const paste = await db.getPaste(req.params.id);
 
         if (!paste) return res.status(404).json({ error: 'Not found or expired' });
 
-        // Если это "одноразовая" паста — удаляем после просмотра
         if (paste.burn_view_count === 1) {
             await db.deletePaste(paste.id);
         }
@@ -132,7 +117,6 @@ app.get('/api/paste/:id', async (req, res) => {
 app.post('/api/ios-share', async (req, res) => {
     let content = req.body.content || req.body;
     
-    // Парсинг JSON, если iOS отправил его некорректно как текст
     if (typeof content === 'object' && content.content) {
         content = content.content;
     }
@@ -140,7 +124,7 @@ app.post('/api/ios-share', async (req, res) => {
     if (!content) return res.status(400).json({ error: 'No content' });
 
     const id = generateId();
-    const expiresAt = calculateExpiration('1d'); // Дефолт: 1 день
+    const expiresAt = calculateExpiration('1d');
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     try {
@@ -152,7 +136,6 @@ app.post('/api/ios-share', async (req, res) => {
     }
 });
 
-// --- ADMIN ROUTES (PAGES) ---
 
 app.get('/admin/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
@@ -161,7 +144,6 @@ app.get('/admin/login', (req, res) => {
 app.post('/admin/auth', (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
-        // Ставим куку на 24 часа
         res.cookie('admin_session', ADMIN_TOKEN, { httpOnly: true, maxAge: 86400000 });
         res.redirect('/admin');
     } else {

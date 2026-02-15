@@ -2,3 +2,4 @@ node_modules/
 pastes.db
 .env
 .DS_Store
+guide_for_server.md
