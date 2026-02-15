@@ -1,0 +1,4 @@
+node_modules/
+pastes.db
+.env
+.DS_Store

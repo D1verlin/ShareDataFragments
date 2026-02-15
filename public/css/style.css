@@ -1,0 +1,321 @@
+:root {
+    --bg: #050505;      /* Очень глубокий черный */
+    --surface: #121212; /* Поверхность */
+    --border: #333333;  /* Границы */
+    --accent: #ffffff;  /* Акцент */
+    --text-main: #ffffff;
+    --text-sec: #999999;
+    
+    --radius: 12px;     /* Единый радиус закругления */
+
+    --font-ui: 'Inter', sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; outline: none; margin: 0; padding: 0; }
+
+body {
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-layout { display: flex; flex-direction: column; height: 100%; }
+
+/* --- TOOLBAR --- */
+.toolbar {
+    height: 60px;
+    background: var(--bg);
+    display: flex; align-items: center; padding: 0 20px; gap: 12px;
+    flex-shrink: 0;
+}
+
+/* --- CUSTOM SELECTS --- */
+.custom-select {
+    position: relative;
+    font-family: var(--font-ui);
+    z-index: 20; /* Чтобы меню было поверх всего */
+}
+
+/* Кнопка открытия (Триггер) */
+.select-trigger {
+    background: var(--surface);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 0 14px;
+    height: 36px;
+    border-radius: var(--radius);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-width: 140px; /* Фиксированная минимальная ширина */
+    transition: all 0.2s ease;
+}
+
+.select-trigger:hover, .custom-select.open .select-trigger {
+    border-color: var(--accent);
+    background: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
+}
+
+.select-trigger svg {
+    transition: transform 0.3s ease;
+    opacity: 0.7;
+}
+
+/* Поворот стрелки при открытии */
+.custom-select.open .select-trigger svg {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+/* Выпадающий список */
+.select-options {
+    position: absolute;
+    top: calc(100% + 8px); /* Отступ сверху */
+    left: 0;
+    width: 100%; /* Ширина как у родителя */
+    min-width: 160px; /* Можно сделать шире родителя */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px;
+    display: none; /* Скрыто по умолчанию */
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 50;
+    
+    /* Анимация появления */
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Класс для открытия */
+.custom-select.open .select-options {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Опции внутри списка */
+.option {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-sec);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: 0.1s;
+}
+
+.option:hover {
+    background: var(--bg);
+    color: var(--text-main);
+}
+
+.option.selected {
+    background: var(--border);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.brand { 
+    font-weight: 800; font-size: 16px; letter-spacing: -0.5px; margin-right: 10px; 
+    display: flex; align-items: center; gap: 8px;
+}
+.brand-icon { 
+    width: 24px; height: 24px; background: var(--accent); color: var(--bg); 
+    border-radius: 6px; display: grid; place-items: center; font-size: 10px;
+}
+
+.divider { width: 1px; height: 24px; background: var(--border); }
+.spacer { flex: 1; }
+
+/* --- ЭЛЕМЕНТЫ УПРАВЛЕНИЯ --- */
+select, button, .file-label {
+    background: var(--surface);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 0 14px;
+    height: 36px;
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* Акцент при наведении */
+select:hover, button:hover, .file-label:hover {
+    border-color: var(--accent);
+    background: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
+}
+
+#file-upload { display: none; }
+
+/* Главная кнопка */
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border: 1px solid var(--accent);
+    font-weight: 700;
+}
+.btn-primary:hover {
+    background: transparent;
+    color: var(--accent);
+    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.15);
+}
+
+.btn-icon { padding: 0; width: 36px; }
+
+/* --- EDITOR AREA --- */
+.editor-area {
+    flex: 1; position: relative; overflow: hidden;
+    background: var(--bg);
+    padding: 20px;
+    display: flex; justify-content: center;
+}
+
+.code-container {
+    position: relative;
+    width: 100%; height: 100%;
+    max-width: 1200px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    overflow: hidden; 
+}
+
+/* =========================================
+   ИСПРАВЛЕНИЕ СКРОЛЛА (SCROLL FIX)
+   ========================================= */
+textarea, pre {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    margin: 0; padding: 20px; border: none;
+    
+    font-family: var(--font-code) !important;
+    font-size: 14px !important; 
+    line-height: 1.5 !important; 
+    letter-spacing: 0px !important;
+
+    /* ВАЖНО: Отключаем перенос слов для горизонтального скролла */
+    white-space: pre !important; 
+    word-wrap: normal !important;
+    overflow: auto; /* Разрешаем скролл */
+    
+    scrollbar-width: thin; 
+    scrollbar-color: var(--border) var(--surface);
+}
+
+/* Нижний слой (Подсветка) */
+pre { 
+    z-index: 1; 
+    pointer-events: none; 
+    background: transparent !important;
+    /* Скрываем скроллбар у подложки, чтобы не двоился. Скроллим только JS-ом */
+    overflow: hidden !important; 
+}
+
+/* Верхний слой (Ввод) */
+textarea {
+    z-index: 2; 
+    color: transparent !important; 
+    background: transparent !important;
+    caret-color: var(--accent); 
+    resize: none; 
+    -webkit-text-fill-color: transparent;
+    /* У textarea скролл остается видимым и рабочим */
+}
+
+textarea::selection { background: rgba(255, 255, 255, 0.15); color: transparent; }
+code { font-family: inherit !important; font-size: inherit !important; line-height: inherit !important; }
+
+/* --- MARKDOWN PREVIEW --- */
+#markdown-preview {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg);
+    padding: 30px;
+    overflow-y: auto;
+    z-index: 10;
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    line-height: 1.6;
+}
+
+#markdown-preview h1, #markdown-preview h2, #markdown-preview h3 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px; margin-bottom: 20px; margin-top: 30px;
+    color: var(--accent);
+}
+#markdown-preview p { margin-bottom: 15px; }
+#markdown-preview ul { margin-left: 20px; margin-bottom: 15px; }
+#markdown-preview code {
+    background: var(--surface);
+    padding: 2px 6px; border-radius: 4px;
+    font-family: var(--font-code); border: 1px solid var(--border);
+}
+#markdown-preview pre {
+    position: relative; /* Сброс абсолютного позиционирования */
+    background: #111 !important;
+    padding: 15px; border-radius: 8px;
+    overflow-x: auto; z-index: auto;
+    white-space: pre-wrap !important; /* В Markdown превью перенос строк полезен */
+}
+#markdown-preview blockquote {
+    border-left: 4px solid var(--accent);
+    padding-left: 15px; color: var(--text-sec);
+    margin: 20px 0;
+}
+#markdown-preview a { color: var(--accent); text-decoration: underline; }
+
+/* --- DRAG & DROP OVERLAY --- */
+#drag-overlay {
+    position: absolute; inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius);
+    display: none; /* Скрыт */
+    place-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800; color: var(--accent);
+    pointer-events: none; z-index: 50;
+}
+.editor-area.drag-active #drag-overlay { display: flex; }
+
+/* --- FOOTER --- */
+.status-bar {
+    height: 36px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    font-size: 12px; color: var(--text-sec);
+    background: var(--bg);
+    flex-shrink: 0;
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+    display: none; place-items: center; justify-content: center; z-index: 100;
+}
+.modal-card {
+    background: var(--surface); border: 1px solid var(--border); padding: 30px;
+    border-radius: 16px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.modal-card h3 { margin-bottom: 15px; font-weight: 700; letter-spacing: -0.5px;}
+.modal-card img { border-radius: 8px; border: 4px solid var(--accent); margin: 15px 0; image-rendering: pixelated; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .toolbar { padding: 0 10px; gap: 8px; height: 50px; overflow-x: auto; }
+    select, button, .file-label { height: 32px; padding: 0 10px; font-size: 12px; }
+    .brand-text { display: none; }
+    .editor-area { padding: 10px; }
+}

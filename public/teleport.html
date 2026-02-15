@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Teleport // Mono</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .header { padding: 15px; border-bottom: 1px solid #333; font-weight: bold; display: flex; justify-content: space-between; }
+        .dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; }
+        .messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { align-self: flex-end; background: #222; border: 1px solid #444; padding: 10px; border-radius: 4px; max-width: 80%; }
+        .input-area { padding: 10px; border-top: 1px solid #333; display: flex; gap: 10px; background: #000; }
+        textarea { flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 0; font-family: monospace; font-size: 16px; resize: none; }
+        button { background: #fff; color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"><span>CONNECTED</span><div class="dot"></div></div>
+    <div class="messages" id="list"></div>
+    <div class="input-area">
+        <textarea id="inp" rows="1" placeholder="Type here..."></textarea>
+        <button id="send">SEND</button>
+    </div>
+    <script>
+        const ws = new WebSocket((window.location.protocol=='https:'?'wss:':'ws:')+'//'+window.location.host);
+        const session = new URLSearchParams(window.location.search).get('session');
+        const list = document.getElementById('list');
+        const inp = document.getElementById('inp');
+        
+        document.getElementById('send').onclick = () => {
+            if(!inp.value) return;
+            ws.send(JSON.stringify({ type: 'teleport_text', sessionId: session, text: inp.value }));
+            const d = document.createElement('div'); d.className='msg'; d.innerText=inp.value;
+            list.appendChild(d); list.scrollTop=list.scrollHeight;
+            inp.value='';
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NodeBin // Admin Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-body { background: #050505; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* HEADER */
+        .admin-header {
+            height: 60px; border-bottom: 1px solid #333; display: flex; align-items: center; 
+            padding: 0 30px; justify-content: space-between; background: #0a0a0a;
+        }
+        .admin-title { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; color: #fff; }
+        .admin-title span { color: #666; }
+
+        /* CONTENT */
+        .admin-content { flex: 1; padding: 30px; overflow-y: auto; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+        /* STATS CARDS */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card {
+            background: #121212; border: 1px solid #333; padding: 20px; border-radius: 12px;
+        }
+        .stat-val { font-size: 32px; font-weight: 800; color: #fff; }
+        .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        /* TOOLBAR */
+        .list-toolbar { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-input {
+            background: #121212; border: 1px solid #333; color: #fff; padding: 10px 15px;
+            border-radius: 8px; width: 300px; font-family: 'Inter'; font-size: 14px;
+        }
+        .search-input:focus { border-color: #fff; }
+
+        /* TABLE */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th { text-align: left; color: #666; padding: 10px; border-bottom: 1px solid #333; font-weight: 600; }
+        .data-table td { padding: 12px 10px; border-bottom: 1px solid #222; color: #ddd; vertical-align: middle; }
+        .data-table tr:hover { background: #111; }
+
+        .mono { font-family: 'JetBrains Mono'; color: #aaa; }
+        .badge { 
+            padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase;
+        }
+        .badge-burn { background: rgba(255, 71, 87, 0.2); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+        .badge-lang { background: #222; border: 1px solid #444; color: #ccc; }
+
+        /* ACTIONS */
+        .actions { display: flex; gap: 8px; }
+        .btn-mini {
+            padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; border: 1px solid #333; background: transparent; color: #fff;
+        }
+        .btn-mini:hover { border-color: #fff; }
+        .btn-danger:hover { border-color: #ff4757; color: #ff4757; }
+        .btn-ban:hover { border-color: #eab308; color: #eab308; }
+
+        /* MODAL */
+        .code-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .code-modal-content {
+            width: 80%; height: 80%; background: #111; border: 1px solid #333; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header {
+            padding: 15px 20px; border-bottom: 1px solid #333; background: #0a0a0a;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-body {
+            flex: 1; overflow: auto; padding: 20px; margin: 0;
+        }
+        .modal-body pre { 
+            margin: 0;
+            background: transparent !important;
+            position: relative;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="admin-body">
+
+    <div class="admin-header">
+        <div class="admin-title">/// NODEBIN <span>ADMIN</span></div>
+        <a href="/" style="color: #888; text-decoration: none; font-size: 13px;">Exit to App -></a>
+    </div>
+
+    <div class="admin-content">
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-val" id="total-pastes">-</div>
+                <div class="stat-label">Active Pastes</div>
+            </div>
+            <div class="stat-card" style="border-color: #333;">
+                <div class="stat-val" id="total-bans">-</div>
+                <div class="stat-label">Banned IPs</div>
+            </div>
+        </div>
+
+        <div class="list-toolbar" style="justify-content: space-between;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-mini" id="tab-pastes" onclick="switchTab('pastes')" style="background: #fff; color: #000;">PASTES</button>
+                <button class="btn-mini" id="tab-bans" onclick="switchTab('bans')">BANNED IPS</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="search" class="search-input" placeholder="Search...">
+                <button class="btn-mini" onclick="refreshCurrentTab()">↻ Refresh</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead id="table-head">
+                </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
+
+    </div>
+
+    <div id="view-modal" class="code-modal">
+        <div class="code-modal-content">
+            <div class="modal-header">
+                <span style="font-weight: bold; font-family: 'JetBrains Mono';" id="modal-title">Content</span>
+                <button class="btn-mini" onclick="closeModal()">CLOSE</button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="modal-code" class="language-text"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script>
+        let currentTab = 'pastes'; // 'pastes' или 'bans'
+        let cachedPastes = [];
+        let cachedBans = [];
+
+        // Инициализация
+        loadStats();
+        switchTab('pastes');
+
+        // Загрузка статистики
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats');
+            const stats = await res.json();
+            document.getElementById('total-pastes').textContent = stats.count;
+            
+            // Загружаем кол-во банов отдельно для счетчика
+            const bansRes = await fetch('/api/admin/banned');
+            const bans = await bansRes.json();
+            document.getElementById('total-bans').textContent = bans.length;
+        }
+
+        // Переключение вкладок
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // UI кнопок
+            const btnP = document.getElementById('tab-pastes');
+            const btnB = document.getElementById('tab-bans');
+            
+            if (tab === 'pastes') {
+                btnP.style.background = '#fff'; btnP.style.color = '#000';
+                btnB.style.background = 'transparent'; btnB.style.color = '#fff';
+            } else {
+                btnB.style.background = '#fff'; btnB.style.color = '#000';
+                btnP.style.background = 'transparent'; btnP.style.color = '#fff';
+            }
+
+            loadData();
+        }
+
+        function refreshCurrentTab() {
+            loadData();
+            loadStats();
+        }
+
+        async function loadData() {
+            const tbody = document.getElementById('table-body');
+            const thead = document.getElementById('table-head');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">Loading...</td></tr>';
+
+            if (currentTab === 'pastes') {
+                // --- РЕНДЕР ПАСТ ---
+                thead.innerHTML = `
+                    <tr>
+                        <th>ID</th><th>Info</th><th>IP Address</th><th>Created</th><th>Expires</th><th style="text-align: right">Actions</th>
+                    </tr>
+                `;
+                
+                const res = await fetch('/api/admin/list');
+                cachedPastes = await res.json();
+                renderPastes(cachedPastes);
+
+            } else {
+                // --- РЕНДЕР БАНОВ ---
+                thead.innerHTML = `
+                    <tr>
+                        <th>IP Address</th><th>Reason</th><th>Banned At</th><th style="text-align: right">Actions</th>
+                    </tr>
+                `;
+
+                const res = await fetch('/api/admin/banned');
+                cachedBans = await res.json();
+                renderBans(cachedBans);
+            }
+        }
+
+        function renderPastes(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pastes found</td></tr>';
+
+            data.forEach(p => {
+                const tr = document.createElement('tr');
+                let badges = `<span class="badge badge-lang">${p.language}</span>`;
+                if(p.burn_view_count > 0) badges += ` <span class="badge badge-burn">BURN</span>`;
+
+                tr.innerHTML = `
+                    <td><span class="mono">/${p.id}</span></td>
+                    <td><div style="font-size: 12px; margin-bottom: 4px;">${badges}</div><div style="color: #666; font-size: 11px;">${escapeHtml(p.preview || '')}...</div></td>
+                    <td><span class="mono">${p.client_ip || 'N/A'}</span></td>
+                    <td>${new Date(p.created_at).toLocaleString()}</td>
+                    <td style="color: #666;">${p.expires_at ? new Date(p.expires_at).toLocaleDateString() : 'Never'}</td>
+                    <td style="text-align: right;">
+                        <div class="actions" style="justify-content: flex-end;">
+                            <button class="btn-mini" onclick="viewPaste('${p.id}', '${p.language}')">VIEW</button>
+                            <button class="btn-mini btn-ban" onclick="banIP('${p.client_ip}')">BAN</button>
+                            <button class="btn-mini btn-danger" onclick="deletePaste('${p.id}')">DEL</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBans(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active bans</td></tr>';
+
+            data.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="mono" style="color: #ff4757;">${b.ip}</span></td>
+                    <td>${b.reason}</td>
+                    <td>${new Date(b.banned_at).toLocaleString()}</td>
+                    <td style="text-align: right;">
+                        <button class="btn-mini" onclick="unbanIP('${b.ip}')">UNBAN</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ACTIONS ---
+
+        async function unbanIP(ip) {
+            if(!confirm(`Unban IP ${ip}?`)) return;
+            const res = await fetch('/api/admin/unban', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ip })
+            });
+            if (res.ok) refreshCurrentTab();
+        }
+
+        async function banIP(ip) {
+            if(!ip || ip === 'N/A') return alert('No IP detected');
+            if(!confirm(`Ban IP ${ip} forever?`)) return;
+            
+            const res = await fetch('/api/admin/ban', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ip })
+            });
+            if(res.ok) {
+                alert('IP Banned');
+                refreshCurrentTab(); // Обновит статистику
+            }
+        }
+
+        async function deletePaste(id) {
+            if(!confirm('Delete?')) return;
+            await fetch(`/api/admin/delete/${id}`, { method: 'DELETE' });
+            refreshCurrentTab();
+        }
+
+        // --- SEARCH ---
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            
+            if (currentTab === 'pastes') {
+                const filtered = cachedPastes.filter(p => 
+                    p.id.toLowerCase().includes(term) || 
+                    (p.client_ip && p.client_ip.includes(term)) ||
+                    (p.preview && p.preview.toLowerCase().includes(term))
+                );
+                renderPastes(filtered);
+            } else {
+                const filtered = cachedBans.filter(b => b.ip.includes(term));
+                renderBans(filtered);
+            }
+        });
+
+        // --- MODAL & UTIL ---
+        async function viewPaste(id, lang) {
+            const res = await fetch(`/api/admin/raw/${id}`);
+            if(res.ok) {
+                const text = await res.text();
+                const codeEl = document.getElementById('modal-code');
+                codeEl.className = `language-${lang}`;
+                codeEl.innerHTML = escapeHtml(text);
+                Prism.highlightElement(codeEl);
+                document.getElementById('modal-title').textContent = `Paste /${id}`;
+                document.getElementById('view-modal').style.display = 'flex';
+            }
+        }
+
+        function closeModal() { document.getElementById('view-modal').style.display = 'none'; }
+        
+        function escapeHtml(unsafe) {
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

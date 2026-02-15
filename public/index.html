@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NodeBin // Monochrome</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <nav class="toolbar">
+            <div class="brand">
+                <div class="brand-icon">NB</div>
+                <span class="brand-text">NodeBin</span>
+            </div>
+
+            <label class="file-label" title="Import Text File">
+                <input type="file" id="file-upload">
+                <span>Import</span>
+            </label>
+
+            <div class="divider"></div>
+
+            <div class="custom-select" id="lang-dropdown">
+                <button class="select-trigger">
+                    <span class="selected-text">Plain Text</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1L5 5L9 1"/></svg>
+                </button>
+                <div class="select-options">
+                    <div class="option" data-value="text">Plain Text</div>
+                    <div class="option" data-value="javascript">JavaScript</div>
+                    <div class="option" data-value="python">Python</div>
+                    <div class="option" data-value="css">CSS</div>
+                    <div class="option" data-value="html">HTML</div>
+                    <div class="option" data-value="json">JSON</div>
+                    <div class="option" data-value="bash">Bash</div>
+                    <div class="option" data-value="sql">SQL</div>
+                </div>
+            </div>
+
+            <div class="custom-select" id="ttl-dropdown">
+                <button class="select-trigger">
+                    <span class="selected-text">Never expire</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1L5 5L9 1"/></svg>
+                </button>
+                <div class="select-options">
+                    <div class="option" data-value="never">Never expire</div>
+                    <div class="option" data-value="10m">10 Minutes</div>
+                    <div class="option" data-value="1h">1 Hour</div>
+                    <div class="option" data-value="1d">1 Day</div>
+                    <div class="option" data-value="1w">1 Week</div>
+                </div>
+            </div>
+
+            <button id="btn-burn" title="Burn after reading" style="opacity: 0.5;">
+                🔥 Burn: OFF
+            </button>
+            
+            <button id="btn-md" title="Toggle Markdown Preview">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+            </button>
+
+            <button id="btn-copy" class="btn-icon" title="Copy to Clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+
+            <div class="spacer"></div>
+
+            <button id="btn-teleport" title="Teleport from Phone">QR Connect</button>
+            <button id="btn-save" class="btn-primary">SAVE</button>
+            <button id="btn-new" style="display: none;">NEW</button>
+        </nav>
+
+        <main class="editor-area" id="drop-zone">
+            <div class="code-container">
+                <pre aria-hidden="true"><code id="highlighting-content" class="language-text"></code></pre>
+                
+                <textarea id="editing-textarea" placeholder="// Type content, drop file, or import..." spellcheck="false"></textarea>
+                
+                <div id="markdown-preview" style="display: none;"></div>
+            </div>
+            
+            <div id="drag-overlay">DROP FILE HERE</div>
+        </main>
+        
+        <div class="status-bar">
+            <span id="status-msg">Ready</span>
+            <span id="char-count">0 chars</span>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h3>TELEPORT LINK</h3>
+            <div id="qr-target"></div>
+            <button onclick="document.getElementById('qr-modal').style.display='none'">CLOSE</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    
+    <script src="/js/app.js"></script>
+</body>
+</html>

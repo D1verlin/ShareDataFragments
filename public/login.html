@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NodeBin // Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; }
+        .login-card { border: 1px solid #333; padding: 40px; text-align: center; width: 300px; }
+        input { width: 100%; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; padding: 10px; }
+        button { width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>/// ADMIN ACCESS</h2>
+        <form action="/admin/auth" method="POST">
+            <input type="password" name="password" placeholder="Password..." autofocus required>
+            <button type="submit" class="btn-primary">ENTER</button>
+        </form>
+    </div>
+</body>
+</html>
